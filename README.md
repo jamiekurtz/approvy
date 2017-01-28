@@ -85,7 +85,7 @@ Submits a request for approval.
 - waitOnRedirect: indicates you want the redirect to include the `wait=yes` parameter
 - expirationDurationSeconds: number of seconds until the request is considered expired
 
-Responds with 301 to details of the resulting request. The redirected location will be a GET to /requests/{id}?block{yes|no}
+Responds with 301 to details of the resulting request. The redirected location will be a GET to /requests/{id}?wait={yes|no}
 
 ### GET /requests/{id}?wait=yes
 
