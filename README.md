@@ -6,7 +6,18 @@ If you're new to Golang, here are some resources:
 - [The Go Programming Language](https://www.amazon.com/Programming-Language-Addison-Wesley-Professional-Computing/dp/0134190440)
 
 
-# Prerequisites
+# Overview
+
+The general idea is that a caller, typically a shell script on some server somewhere, will request approval for a given action. In this case, we want the call to wait for the request to be approved (or, rejected). For example, a deployment script might want to request approval from a manager or deployment lead before continuing. In this way, an organization can configure just about any deployment tool, yet still be confident that if a deployment is initiated, it won't continue unless approval is obtained.
+
+It is not uncommon for deployments to be fully automated these days. But that presents a problem to organizations that still need both approval and an audit trail of those approvals for deployments. And the person or group approving the deployment may not necessarily be an active user in the chosen deployment tool. As such, being able to approve or reject an approval request via SMS message is considerably more useful and efficient.
+
+If the deployment (or similar) script is leveraging the Approvy REST API via `curl` command, care must be taken to halt the deployment process if the approval request status is not `approved`. Or, you can checkout the sample script(s) in this repo for help with some wrapper code.
+
+
+# Contributing
+
+## Prerequisites
 
 Make sure you have the following installed:
 
@@ -16,7 +27,7 @@ Make sure you have the following installed:
 Using Vagrant to spin up a development VM in VirtualBox is the **only** supported configuration for working on this application.
 
 
-# Preparing (or, resetting) the environment
+## Preparing (or, resetting) the environment
 
 Open your terminal to the repo's root, and enter the following:
 
@@ -40,8 +51,7 @@ To stop the VM after you've exited the SSH session, enter the following: `vagran
 To completely delete the VM, enter the following: `vagrant destroy`
 
 
-Compile and Run
----------------
+## Compile and Run
 
 Start by ensuring you're in the Vagrant box with: `vagrant ssh`. Then ensure you're in the correct directory on the box with: `cd $APPROVYPATH`. And also, you need to have already run `setup/reset.sh`, per the previous section.
 
@@ -54,14 +64,9 @@ Then, to run the server: `approvy`
 Then use your browser to navigate to [http://localhost:3000](http://localhost:3000).
 
 
-Other Things
-------------
+## Other Things
 
 In addition to the Redis server, the Redis tools are also installed in the Vagrant VM. For example, you can access the Redis client with `redis-cli`.
-
-
-Testing
--------
 
 With the service running, you can submit an approval request with the following CURL command:
 
@@ -70,8 +75,7 @@ curl -d 'from=bob&to=jamie&subject=release 45 to production' http://localhost:30
 ```
 
 
-The API
--------
+# The API
 
 All API requests must include an appropriate `X_API_KEY` HTTP header value.
 
