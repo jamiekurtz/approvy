@@ -12,6 +12,8 @@ The general idea is that a caller, typically a shell script on some server somew
 
 It is not uncommon for deployments to be fully automated these days. But that presents a problem to organizations that still need both approval and an audit trail of those approvals for deployments. And the person or group approving the deployment may not necessarily be an active user in the chosen deployment tool. As such, being able to approve or reject an approval request via SMS message is considerably more useful and efficient.
 
+We can also use Approvy to help prevent accidental deployments. It is certainly not unheard of for an engineer or automation process to mistakenly deploy some release to the wrong target. Or maybe you want to provide your users an out-of-band approval mechanism for the big red DELETE button on their account. Any action or activity that would benefit from an SMS-based approval is a good candidate for Approvy.
+
 If the deployment (or similar) script is leveraging the Approvy REST API via `curl` command, care must be taken to halt the deployment process if the approval request status is not `approved`. Or, you can checkout the sample script(s) in this repo for help with some wrapper code.
 
 
