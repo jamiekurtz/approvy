@@ -87,10 +87,10 @@ Submits a request for approval.
 
 Responds with 301 to details of the resulting request. The redirected location will be a GET to /requests/{id}?block{yes|no}
 
-### GET /requests/{id}?block=yes
+### GET /requests/{id}?wait=yes
 
 - id: unique ID of the appoval request (as returned by the POST to /requests)
-- wait: 'yes' indicates you want the call to block until the request is approved or rejected
+- wait: 'yes' indicates you want the call to block until the request is completed (i.e. approved or rejected)
 
 Response:
 
