@@ -70,3 +70,44 @@ curl -d 'from=bob&to=jamie&subject=release 45 to production' http://localhost:30
 ```
 
 
+The API
+-------
+
+All API requests must include an appropriate `X_API_KEY` HTTP header value.
+
+### POST /requests
+
+Submits a request for approval.
+
+- from: name of requester
+- to: name of approver
+- subject: text to appear in text message
+- waitOnRedirect: indicates you want the redirect to include the `wait=yes` parameter
+- expirationDurationSeconds: number of seconds until the request is considered expired
+
+Responds with 301 to details of the resulting request. The redirected location will be a GET to /requests/{id}?block{yes|no}
+
+### GET /requests/{id}?block=yes
+
+- id: unique ID of the appoval request (as returned by the POST to /requests)
+- wait: 'yes' indicates you want the call to block until the request is approved or rejected
+
+Response:
+
+- id: unique identifier of the approval request
+- from: name of the sender
+- to: name of the approver (person or group)
+- subject: subject of the approval request
+- createdAt: date/time the request was submitted
+- status: {waiting|expired|approved|rejected}
+- responses: list of reponses to this request
+- completedAt: date/time the request is completed
+
+### POST /requests/{id}/responses
+
+Posts a response to a given approval request. 
+
+- id: unique identifier of the approval request
+- response: {approve|reject}
+
+
