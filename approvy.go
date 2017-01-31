@@ -7,12 +7,17 @@ import (
     "github.com/gorilla/mux"
     "github.com/sfreiberg/gotwilio"
     "github.com/spf13/viper"
+    "database/sql"
+    _ "github.com/mattn/go-sqlite3"
+    "os"
 )
 
 var config, secrets *viper.Viper
+var db *sql.DB
 
 func init() {
-    initConfig();
+    initConfig()
+    initDb()
 }
 
 func main() {
@@ -33,6 +38,28 @@ func initConfig() {
     loadConfigFile(secrets, "config/secrets")
 }
 
+func initDb() {
+    os.Remove("./approvy_v1.db")
+
+    var err error
+
+    db, err = sql.Open("sqlite3", "./approvy_v1.db")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+    sql := `
+	create table responses (id integer not null primary key, response_text text);
+	delete from responses;
+    insert into responses(id, response_text) values(1, 'hello, World');
+	`
+
+    _, err = db.Exec(sql)
+    if err != nil {
+        log.Fatal(err)
+    }
+}
+
 func loadConfigFile(v *viper.Viper, filename string) {
     v.SetConfigName(filename)
     v.AddConfigPath(".")
@@ -46,6 +73,18 @@ func loadConfigFile(v *viper.Viper, filename string) {
 
 func index(w http.ResponseWriter, r *http.Request) {
     w.Write([]byte("Approvy!\n"))
+
+    rows, err := db.Query("select id, response_text from responses;")
+    defer rows.Close()
+    for rows.Next() {
+        var id int
+        var response_text string
+        err = rows.Scan(&id, &response_text)
+        if err != nil {
+            log.Fatal(err)
+        }
+        w.Write([]byte(response_text))
+    }
 }
 
 func approvalRequestHandler(w http.ResponseWriter, r *http.Request) {

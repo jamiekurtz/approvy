@@ -18,7 +18,7 @@ wget -nv https://storage.googleapis.com/golang/go1.7.4.linux-amd64.tar.gz
 sudo tar -C /usr/local -xzf go1.7.4.linux-amd64.tar.gz
 
 # install some dev tools
-sudo apt-get -y install redis-tools
+sudo apt-get -y install redis-tools sqlite3
 
 # cleanup
 sudo apt-get clean
