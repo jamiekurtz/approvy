@@ -1,17 +1,17 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
+	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
-    "github.com/sfreiberg/gotwilio"
+	"github.com/sfreiberg/gotwilio"
 	"github.com/spf13/viper"
 	"log"
 	"net/http"
 	"os"
-    "github.com/jinzhu/gorm"
-    "encoding/json"
-    "time"
+	"time"
 )
 
 var config, secrets *viper.Viper
@@ -51,7 +51,7 @@ func initDb() {
 		log.Fatal(err)
 	}
 
-    db.AutoMigrate(&Request{})
+	db.AutoMigrate(&Request{})
 }
 
 func loadConfigFile(v *viper.Viper, filename string) {
@@ -68,47 +68,47 @@ func loadConfigFile(v *viper.Viper, filename string) {
 func index(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Approvy!\n"))
 
-    request := Request{}
-    db.Last(&request)
-    w.Write([]byte(request.Message))
+	request := Request{}
+	db.Last(&request)
+	w.Write([]byte(request.Message))
 }
 
 func getApprovalRequestsHandler(w http.ResponseWriter, r *http.Request) {
-    vars := mux.Vars(r)
-    id := vars["id"]
+	vars := mux.Vars(r)
+	id := vars["id"]
 
-    request := Request{}
-    found := db.First(&request, id).Error != gorm.ErrRecordNotFound
-    b, err := json.Marshal(request)
-    if err != nil {
-        w.Write([]byte(err.Error()))
-        return
-    }
+	request := Request{}
+	found := db.First(&request, id).Error != gorm.ErrRecordNotFound
+	b, err := json.Marshal(request)
+	if err != nil {
+		w.Write([]byte(err.Error()))
+		return
+	}
 
-    if !found {
-        w.WriteHeader(404)
-        return
-    }
+	if !found {
+		w.WriteHeader(404)
+		return
+	}
 
-    w.Header().Set("Content-Type", "application/json")
-    w.Write(b)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(b)
 }
 
 func postApprovalRequestHandler(w http.ResponseWriter, r *http.Request) {
 	to := r.FormValue("to")
-    message := r.FormValue("message")
+	message := r.FormValue("message")
 	from := r.FormValue("from")
 
-    expiresAt := time.Now().Add(time.Hour)
-    request := Request{From: from, To: to, Message: message, ExpiresAt: expiresAt}
+	expiresAt := time.Now().Add(time.Hour)
+	request := Request{From: from, To: to, Message: message, ExpiresAt: expiresAt}
 	db.Create(&request)
 
-    w.Write([]byte(request.IDstr()))
+	w.Write([]byte(request.IDstr()))
 
-    twilioEnabled := config.GetString("TWILIO_ENABLED")
-    if twilioEnabled == "yes" {
-        sendApprovalRequest(from, to, message)
-    }
+	twilioEnabled := config.GetString("TWILIO_ENABLED")
+	if twilioEnabled == "yes" {
+		sendApprovalRequest(from, to, message)
+	}
 }
 
 func sendApprovalRequest(from string, to string, subject string) {
