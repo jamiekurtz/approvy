@@ -1,19 +1,21 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
 	"github.com/gorilla/mux"
-	_ "github.com/mattn/go-sqlite3"
-	"github.com/sfreiberg/gotwilio"
+	_ "github.com/jinzhu/gorm/dialects/sqlite"
+    "github.com/sfreiberg/gotwilio"
 	"github.com/spf13/viper"
 	"log"
 	"net/http"
 	"os"
+    "github.com/jinzhu/gorm"
+    "encoding/json"
+    "time"
 )
 
 var config, secrets *viper.Viper
-var db *sql.DB
+var db *gorm.DB
 
 func init() {
 	initConfig()
@@ -23,7 +25,8 @@ func init() {
 func main() {
 	router := mux.NewRouter()
 	router.HandleFunc("/", index)
-	router.HandleFunc("/requests", approvalRequestHandler).Methods("POST")
+	router.HandleFunc("/requests/{id}", getApprovalRequestsHandler).Methods("GET")
+	router.HandleFunc("/requests", postApprovalRequestHandler).Methods("POST")
 
 	fmt.Println("Starting approvy server on port 3000.")
 	fmt.Println("Browse to http://localhost:3000 to see the default home page.")
@@ -43,21 +46,12 @@ func initDb() {
 
 	var err error
 
-	db, err = sql.Open("sqlite3", "./approvy_v1.db")
+	db, err = gorm.Open("sqlite3", "./approvy_v1.db")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	sql := `
-	create table responses (id integer not null primary key, response_text text);
-	delete from responses;
-    insert into responses(id, response_text) values(1, 'hello, World');
-	`
-
-	_, err = db.Exec(sql)
-	if err != nil {
-		log.Fatal(err)
-	}
+    db.AutoMigrate(&Request{})
 }
 
 func loadConfigFile(v *viper.Viper, filename string) {
@@ -74,27 +68,47 @@ func loadConfigFile(v *viper.Viper, filename string) {
 func index(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Approvy!\n"))
 
-	rows, err := db.Query("select id, response_text from responses;")
-	defer rows.Close()
-	for rows.Next() {
-		var id int
-		var response_text string
-		err = rows.Scan(&id, &response_text)
-		if err != nil {
-			log.Fatal(err)
-		}
-		w.Write([]byte(response_text))
-	}
+    request := Request{}
+    db.Last(&request)
+    w.Write([]byte(request.Message))
 }
 
-func approvalRequestHandler(w http.ResponseWriter, r *http.Request) {
+func getApprovalRequestsHandler(w http.ResponseWriter, r *http.Request) {
+    vars := mux.Vars(r)
+    id := vars["id"]
+
+    request := Request{}
+    found := db.First(&request, id).Error != gorm.ErrRecordNotFound
+    b, err := json.Marshal(request)
+    if err != nil {
+        w.Write([]byte(err.Error()))
+        return
+    }
+
+    if !found {
+        w.WriteHeader(404)
+        return
+    }
+
+    w.Header().Set("Content-Type", "application/json")
+    w.Write(b)
+}
+
+func postApprovalRequestHandler(w http.ResponseWriter, r *http.Request) {
 	to := r.FormValue("to")
-	subject := r.FormValue("subject")
+    message := r.FormValue("message")
 	from := r.FormValue("from")
 
-	sendApprovalRequest(from, to, subject)
+    expiresAt := time.Now().Add(time.Hour)
+    request := Request{From: from, To: to, Message: message, ExpiresAt: expiresAt}
+	db.Create(&request)
 
-	w.Write([]byte("message sent"))
+    w.Write([]byte(request.IDstr()))
+
+    twilioEnabled := config.GetString("TWILIO_ENABLED")
+    if twilioEnabled == "yes" {
+        sendApprovalRequest(from, to, message)
+    }
 }
 
 func sendApprovalRequest(from string, to string, subject string) {

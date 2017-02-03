@@ -73,7 +73,7 @@ In addition to the Redis server, the Redis tools are also installed in the Vagra
 With the service running, you can submit an approval request with the following CURL command:
 
 ```
-curl -d 'from=bob&to=jamie&subject=release 45 to production' http://localhost:3000/requests
+curl -d 'from=bob&to=jamie&message=release 45 to production' http://localhost:3000/requests
 ```
 
 
@@ -87,7 +87,7 @@ Submits a request for approval.
 
 - from: name of requester
 - to: name of approver
-- subject: text to appear in text message
+- message: text to appear in text message
 - waitOnRedirect: indicates you want the redirect to include the `wait=yes` parameter
 - expirationDurationSeconds: number of seconds until the request is considered expired
 
@@ -103,7 +103,7 @@ Response:
 - id: unique identifier of the approval request
 - from: name of the sender
 - to: name of the approver (person or group)
-- subject: subject of the approval request
+- message: message of the approval request
 - createdAt: date/time the request was submitted
 - status: {waiting|expired|approved|rejected}
 - responses: list of reponses to this request
