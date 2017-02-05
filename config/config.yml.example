@@ -1,5 +1,6 @@
 TWILIO_ACCOUNT_SID: "account_sid"
 TWILIO_FROM: "from_phone_number"
+DEBUG_LOG_LEVEL: "yes"
 approvers:
   bob:
     sms: "+11235551212"
