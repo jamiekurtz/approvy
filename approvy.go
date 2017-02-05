@@ -3,12 +3,12 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	log "github.com/Sirupsen/logrus"
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	"github.com/sfreiberg/gotwilio"
 	"github.com/spf13/viper"
-	"log"
 	"net/http"
 	"os"
 	"time"
@@ -20,6 +20,12 @@ var db *gorm.DB
 func init() {
 	initConfig()
 	initDb()
+
+	if config.GetString("DEBUG_LOG_LEVEL") == "yes" {
+		log.SetLevel(log.DebugLevel)
+	} else {
+		log.SetLevel(log.InfoLevel)
+	}
 }
 
 func main() {
@@ -28,8 +34,8 @@ func main() {
 	router.HandleFunc("/requests/{id}", getApprovalRequestsHandler).Methods("GET")
 	router.HandleFunc("/requests", postApprovalRequestHandler).Methods("POST")
 
-	fmt.Println("Starting approvy server on port 3000.")
-	fmt.Println("Browse to http://localhost:3000 to see the default home page.")
+	log.Info("Starting approvy server on port 3000.")
+	log.Info("Browse to http://localhost:3000 to see the default home page.")
 
 	log.Fatal(http.ListenAndServe(":3000", router))
 }
@@ -48,7 +54,7 @@ func initDb() {
 
 	db, err = gorm.Open("sqlite3", "./approvy_v1.db")
 	if err != nil {
-		log.Fatal(err)
+		log.WithError(err).Fatal("Error initializing database")
 	}
 
 	db.AutoMigrate(&Request{})
@@ -59,7 +65,7 @@ func loadConfigFile(v *viper.Viper, filename string) {
 	v.AddConfigPath(".")
 	err := v.ReadInConfig()
 	if err != nil {
-		panic(fmt.Errorf("Fatal error config file: %s \n", err))
+		log.WithError(err).Fatal("Error loading config files")
 	}
 
 	v.AutomaticEnv()
@@ -122,12 +128,10 @@ func sendApprovalRequest(from string, to string, subject string) {
 	message := fmt.Sprintf("Approval request from %s regarding: %s", from, subject)
 	_, ex, err := twilio.SendSMS(from_number, to_number, message, "", "")
 	if err != nil {
-		fmt.Println("Error occured...")
-		fmt.Println("Error sending message with Twilio: %s", err)
+		log.WithError(err).Error("Error sending message with Twilio")
 	}
 	if ex != nil {
-		fmt.Println("Exception occured...")
-		fmt.Println("Exception sending message wiht Twilio: %s", ex)
+		log.Errorf("Exception sending message with Twilio: %s", ex)
 	}
 }
 
