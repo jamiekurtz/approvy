@@ -123,7 +123,7 @@ func postApprovalResponseHandler(w http.ResponseWriter, r *http.Request) {
     id := vars["id"]
 
 	request := Request{}
-	found := db.First(&request, id).Error != gorm.ErrRecordNotFound
+	found := db.Preload("Responses").First(&request, id).Error != gorm.ErrRecordNotFound
 
     if !found {
 		w.WriteHeader(404)
@@ -134,6 +134,15 @@ func postApprovalResponseHandler(w http.ResponseWriter, r *http.Request) {
     approved := approvedStr == "true"
     response := Response{RequestID: request.ID, Approved: approved}
     db.Create(&response)
+
+    if approved {
+       for _, r := range request.Responses {
+            approved = approved && r.Approved
+        }
+    }
+
+    request.Approved = approved
+    db.Save(&request)
 }
 
 func sendApprovalRequest(from string, to string, subject string) {

@@ -20,6 +20,7 @@ type Request struct {
 	To        string
 	Message   string
 	ExpiresAt time.Time
+    Approved  bool
     Responses []Response
 }
 
