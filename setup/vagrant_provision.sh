@@ -13,6 +13,9 @@ sudo apt-get -y update
 sudo apt-get -y install vim wget curl
 sudo apt-get -y install ntp
 
+# C compiler for Ubuntu
+sudo apt-get -y install build-essential
+
 # install golang tools
 wget -nv https://storage.googleapis.com/golang/go1.7.4.linux-amd64.tar.gz
 sudo tar -C /usr/local -xzf go1.7.4.linux-amd64.tar.gz
