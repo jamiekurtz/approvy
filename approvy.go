@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
@@ -31,6 +31,7 @@ func init() {
 func main() {
 	router := mux.NewRouter()
 	router.HandleFunc("/", index)
+	router.HandleFunc("/status", status)
 	router.HandleFunc("/requests/{id}", getApprovalRequestsHandler).Methods("GET")
 	router.HandleFunc("/requests", postApprovalRequestHandler).Methods("POST")
 
@@ -78,6 +79,11 @@ func index(w http.ResponseWriter, r *http.Request) {
 	db.Last(&request)
 	w.Write([]byte(request.Message))
 }
+
+func status(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("ok"))
+}
+
 
 func getApprovalRequestsHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
