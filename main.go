@@ -3,11 +3,11 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	"github.com/sfreiberg/gotwilio"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"net/http"
 	"os"
@@ -85,7 +85,6 @@ func status(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("ok"))
 }
 
-
 func getApprovalRequestsHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
@@ -125,30 +124,30 @@ func postApprovalRequestHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func postApprovalResponseHandler(w http.ResponseWriter, r *http.Request) {
-    vars := mux.Vars(r)
-    id := vars["id"]
+	vars := mux.Vars(r)
+	id := vars["id"]
 
 	request := Request{}
 	found := db.Preload("Responses").First(&request, id).Error != gorm.ErrRecordNotFound
 
-    if !found {
+	if !found {
 		w.WriteHeader(404)
 		return
 	}
 
-    approvedStr := r.FormValue("approved")
-    approved := approvedStr == "true"
-    response := Response{RequestID: request.ID, Approved: approved}
-    db.Create(&response)
+	approvedStr := r.FormValue("approved")
+	approved := approvedStr == "true"
+	response := Response{RequestID: request.ID, Approved: approved}
+	db.Create(&response)
 
-    if approved {
-       for _, r := range request.Responses {
-            approved = approved && r.Approved
-        }
-    }
+	if approved {
+		for _, r := range request.Responses {
+			approved = approved && r.Approved
+		}
+	}
 
-    request.Approved = approved
-    db.Save(&request)
+	request.Approved = approved
+	db.Save(&request)
 }
 
 func sendApprovalRequest(from string, to string, subject string) {
