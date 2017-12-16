@@ -21,54 +21,36 @@ If the deployment (or similar) script is leveraging the Approvy REST API via `cu
 
 ## Prerequisites
 
-Make sure you have the following installed:
+It is best to start by installing and configuring Go, then use the Go tools to clone this repo.
 
-- [Vagrant](https://www.vagrantup.com/)
-- [VirtualBox](https://www.virtualbox.org/wiki/Downloads)
+1. Install Go according to the instructions [here](https://golang.org/doc/install)
+1. Make sure your GO workspace exists at $HOME/go
 
-Using Vagrant to spin up a development VM in VirtualBox is the **only** supported configuration for working on this application.
+Once Go is installed and configured, run the following commands to clone the repo and download dependencies:
 
+```
+cd $HOME/go
+go get github.com/jamiekurtz/approvy
+```
 
-## Preparing (or, resetting) the environment
+Then you need to create your own config files:
 
-Open your terminal to the repo's root, and enter the following:
+```
+cp config/config.yml.example config/config.yml
+cp config/secrets.yml.example config/secrets.yml
+```
 
-    vagrant up
+Then to compile and run the app: 
 
-This command will download (if needed) and build an Ubuntu-based virtual machine. It will take maybe 5 or 10 minutes the first time.
+```
+cd $HOME/go/src/github.com/jamiekurtz/approvy
+go run *.go
+```
 
-Next, we need to install dependencies and create some sample/test data by running the following:
-
-1. From your terminal where you ran `vagrant up`, run `vagrant ssh`
-1. Once you're in the SSH session, change the current directory: `cd $APPROVYPATH`
-1. Run the following to load all dev/test data: `setup/reset.sh`
-
-At this point, all of the necessary dependencies should be installed and the test data should be loaded for you to develop and test against a local 
-instance of the site. Read the next section for help on starting the site and associated worker processes.
-
-To exit out of the VM simply hit `ctrl d`.
-
-To stop the VM after you've exited the SSH session, enter the following: `vagrant halt`
-
-To completely delete the VM, enter the following: `vagrant destroy`
-
-
-## Compile and Run
-
-Start by ensuring you're in the Vagrant box with: `vagrant ssh`. Then ensure you're in the correct directory on the box with: `cd $APPROVYPATH`. And also, you need to have already run `setup/reset.sh`, per the previous section.
-
-To install dependencies and compile the app: `go install`
-
-That command will place the binary (i.e. `approvy`) into your `$GOPATH/bin` directory.
-
-Then, to run the server: `approvy`
-
-Then use your browser to navigate to [http://localhost:3000](http://localhost:3000).
+Browse to http://localhost:3000/status to make sure the site works.
 
 
 ## Other Things
-
-In addition to the Redis server, the Redis tools are also installed in the Vagrant VM. For example, you can access the Redis client with `redis-cli`.
 
 With the service running, you can submit an approval request with the following CURL command:
 
