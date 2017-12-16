@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/jamiekurtz/approvy.svg?branch=develop)](https://travis-ci.org/jamiekurtz/approvy)
+
 This service, written with Google's Golang, is meant to facilitate remote approval for any kind of action. Approval is obtained via something like SMS, and returns approval status (i.e. approved or denied) to the caller.
 
 If you're new to Golang, here are some resources:
