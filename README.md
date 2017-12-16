@@ -58,6 +58,12 @@ With the service running, you can submit an approval request with the following 
 curl -d 'from=bob&to=jamie&message=release 45 to production' http://localhost:3000/requests
 ```
 
+And then view the request like this (using the ID returned from above command):
+
+```
+curl http://localhost:3000/requests/:id
+```
+
 
 # The API
 
