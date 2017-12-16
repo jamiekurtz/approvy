@@ -29,3 +29,5 @@ _testmain.go
 config/config.yml
 config/secrets.yml
 approvy_*.db
+approvy
+
