@@ -75,10 +75,6 @@ func loadConfigFile(v *viper.Viper, filename string) {
 
 func index(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Approvy!\n"))
-
-	request := Request{}
-	db.Last(&request)
-	w.Write([]byte(fmt.Sprintf("%v", request)))
 }
 
 func status(w http.ResponseWriter, r *http.Request) {
