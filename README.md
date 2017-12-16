@@ -88,7 +88,7 @@ Response:
 - message: message of the approval request
 - createdAt: date/time the request was submitted
 - status: {waiting|expired|approved|rejected}
-- responses: list of reponses to this request
+- responses: list of responses to this request
 - completedAt: date/time the request is completed
 
 ### POST /requests/{id}/responses
@@ -96,6 +96,6 @@ Response:
 Posts a response to a given approval request. 
 
 - id: unique identifier of the approval request
-- response: {approve|reject}
+- approved: {true|false}
 
 

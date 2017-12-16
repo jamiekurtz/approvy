@@ -3,11 +3,11 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	"github.com/sfreiberg/gotwilio"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"net/http"
 	"os"
@@ -34,6 +34,7 @@ func main() {
 	router.HandleFunc("/status", status)
 	router.HandleFunc("/requests/{id}", getApprovalRequestsHandler).Methods("GET")
 	router.HandleFunc("/requests", postApprovalRequestHandler).Methods("POST")
+	router.HandleFunc("/requests/{id}/responses", postApprovalResponseHandler).Methods("POST")
 
 	log.Info("Starting approvy server on port 3000.")
 	log.Info("Browse to http://localhost:3000 to see the default home page.")
@@ -58,7 +59,7 @@ func initDb() {
 		log.WithError(err).Fatal("Error initializing database")
 	}
 
-	db.AutoMigrate(&Request{})
+	db.AutoMigrate(&Request{}, &Response{})
 }
 
 func loadConfigFile(v *viper.Viper, filename string) {
@@ -84,13 +85,12 @@ func status(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("ok"))
 }
 
-
 func getApprovalRequestsHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 
 	request := Request{}
-	found := db.First(&request, id).Error != gorm.ErrRecordNotFound
+	found := db.Preload("Responses").First(&request, id).Error != gorm.ErrRecordNotFound
 	b, err := json.Marshal(request)
 	if err != nil {
 		w.Write([]byte(err.Error()))
@@ -121,6 +121,33 @@ func postApprovalRequestHandler(w http.ResponseWriter, r *http.Request) {
 	if twilioEnabled == "yes" {
 		sendApprovalRequest(from, to, message)
 	}
+}
+
+func postApprovalResponseHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	request := Request{}
+	found := db.Preload("Responses").First(&request, id).Error != gorm.ErrRecordNotFound
+
+	if !found {
+		w.WriteHeader(404)
+		return
+	}
+
+	approvedStr := r.FormValue("approved")
+	approved := approvedStr == "true"
+	response := Response{RequestID: request.ID, Approved: approved}
+	db.Create(&response)
+
+	if approved {
+		for _, r := range request.Responses {
+			approved = approved && r.Approved
+		}
+	}
+
+	request.Approved = approved
+	db.Save(&request)
 }
 
 func sendApprovalRequest(from string, to string, subject string) {
