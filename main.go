@@ -78,7 +78,7 @@ func index(w http.ResponseWriter, r *http.Request) {
 
 	request := Request{}
 	db.Last(&request)
-	w.Write([]byte(request.Message))
+	w.Write([]byte(fmt.Sprintf("%v", request)))
 }
 
 func status(w http.ResponseWriter, r *http.Request) {
@@ -118,7 +118,7 @@ func postApprovalRequestHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(request.IDstr()))
 
 	twilioEnabled := config.GetString("TWILIO_ENABLED")
-	if twilioEnabled == "yes" {
+	if twilioEnabled == "true" {
 		sendApprovalRequest(from, to, message)
 	}
 }
