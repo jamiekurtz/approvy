@@ -1,15 +1,13 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
-	"github.com/gorilla/mux"
+	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	"github.com/sfreiberg/gotwilio"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"net/http"
 	"os"
 	"time"
 )
@@ -29,17 +27,20 @@ func init() {
 }
 
 func main() {
-	router := mux.NewRouter()
-	router.HandleFunc("/", index)
-	router.HandleFunc("/status", status)
-	router.HandleFunc("/requests/{id}", getApprovalRequestsHandler).Methods("GET")
-	router.HandleFunc("/requests", postApprovalRequestHandler).Methods("POST")
-	router.HandleFunc("/requests/{id}/responses", postApprovalResponseHandler).Methods("POST")
+	r := gin.New()
+	r.Use(gin.Recovery())
+	r.Use(gin.LoggerWithWriter(os.Stdout, "/status"))
+
+	r.GET("/", getIndex)
+	r.GET("/status", getStatus)
+	r.GET("/requests/:id", getApprovalRequestsHandler)
+	r.POST("/requests", postApprovalRequestHandler)
+	r.POST("/requests/:id/responses", postApprovalResponseHandler)
 
 	log.Info("Starting approvy server on port 3000.")
 	log.Info("Browse to http://localhost:3000 to see the default home page.")
 
-	log.Fatal(http.ListenAndServe(":3000", router))
+	r.Run(":3000")
 }
 
 func initConfig() {
@@ -73,45 +74,38 @@ func loadConfigFile(v *viper.Viper, filename string) {
 	v.AutomaticEnv()
 }
 
-func index(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Approvy!\n"))
+func getIndex(c *gin.Context) {
+	c.String(200, "Approvy!")
 }
 
-func status(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("ok"))
+func getStatus(c *gin.Context) {
+	c.Status(200)
 }
 
-func getApprovalRequestsHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id := vars["id"]
+func getApprovalRequestsHandler(c *gin.Context) {
+	id := c.Param("id")
 
 	request := Request{}
 	found := db.Preload("Responses").First(&request, id).Error != gorm.ErrRecordNotFound
-	b, err := json.Marshal(request)
-	if err != nil {
-		w.Write([]byte(err.Error()))
-		return
-	}
 
 	if !found {
-		w.WriteHeader(404)
+		c.Status(404)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(b)
+	c.JSON(200, request)
 }
 
-func postApprovalRequestHandler(w http.ResponseWriter, r *http.Request) {
-	to := r.FormValue("to")
-	message := r.FormValue("message")
-	from := r.FormValue("from")
+func postApprovalRequestHandler(c *gin.Context) {
+	to := c.PostForm("to")
+	message := c.PostForm("message")
+	from := c.PostForm("from")
 
 	expiresAt := time.Now().Add(time.Hour)
 	request := Request{From: from, To: to, Message: message, ExpiresAt: expiresAt}
 	db.Create(&request)
 
-	w.Write([]byte(request.IDstr()))
+	c.String(200, request.IDstr())
 
 	twilioEnabled := config.GetString("TWILIO_ENABLED")
 	if twilioEnabled == "true" {
@@ -119,19 +113,18 @@ func postApprovalRequestHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func postApprovalResponseHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id := vars["id"]
+func postApprovalResponseHandler(c *gin.Context) {
+	id := c.Param("id")
 
 	request := Request{}
 	found := db.Preload("Responses").First(&request, id).Error != gorm.ErrRecordNotFound
 
 	if !found {
-		w.WriteHeader(404)
+		c.Status(404)
 		return
 	}
 
-	approvedStr := r.FormValue("approved")
+	approvedStr := c.PostForm("approved")
 	approved := approvedStr == "true"
 	response := Response{RequestID: request.ID, Approved: approved}
 	db.Create(&response)
@@ -144,6 +137,8 @@ func postApprovalResponseHandler(w http.ResponseWriter, r *http.Request) {
 
 	request.Approved = approved
 	db.Save(&request)
+
+	c.Status(200)
 }
 
 func sendApprovalRequest(from string, to string, subject string) {
